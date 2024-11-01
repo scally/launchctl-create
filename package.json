@@ -1,7 +1,7 @@
 {
   "name": "@scally/launchctl-create",
   "module": "index.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "bin": {
     "@scally/launchctl-create": "index.js"

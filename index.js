@@ -6,14 +6,15 @@ import { cwd } from 'process'
 
 (async function() {
   const expandShellPath = async shellPath =>
-    (await $`echo ${shellPath}`).text().trim()
+    (await $`echo ${shellPath}`.quiet().text()).trim()
+
   const creatorImportPath = join(cwd(), Bun.argv[2] || 'service.js')
   const creator = (await import(creatorImportPath)).default
   const spec = typeof creator === 'function' ? await creator({
     expandShellPath,
   }) : creator
   
-  const plistPath = await expandShellPath(`~/Library/LaunchAgents/${spec.name}.plist`)
+  const plistPath = await expandShellPath(`~/Library/LaunchAgents/${spec.name}.plist`)  
   console.log(`Creating service at ${plistPath}`)
   
   const args = spec.args.map(arg => `<string>${arg}</string>`).join('\n')
@@ -36,7 +37,14 @@ import { cwd } from 'process'
   </dict>
   </plist>
   `)
+
+  if ((await $`launchctl list ${spec.name}`.nothrow().quiet()).exitCode === 0) {
+    console.log(`Service ${spec.name} already registered. Attempting removal at ${plistPath}...`)
+    await $`launchctl unload ${plistPath}`
+  }
   
-  await $`launchctl unload ${plistPath}`
+  console.log('Registering service...')
   await $`launchctl load ${plistPath}`  
+
+  console.log('Done!')
 })()
